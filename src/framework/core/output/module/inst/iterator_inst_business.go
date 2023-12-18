@@ -14,11 +14,12 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/core/log"
+	// "configcenter/src/framework/logics/log"
+	"io"
+
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
 )
 
 // BusinessIterator the iterator interface for the business
@@ -34,7 +35,8 @@ type iteratorInstBusiness struct {
 	bufIdx      int
 }
 
-func newIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
+// NewIteratorInstBusiness TODO
+func NewIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
 
 	iter := &iteratorInstBusiness{
 		targetModel: target,
@@ -45,7 +47,7 @@ func newIteratorInstBusiness(target model.Model, cond common.Condition) (Busines
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
 
-	existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Business().SearchBusiness(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -56,13 +58,14 @@ func newIteratorInstBusiness(target model.Model, cond common.Condition) (Busines
 
 }
 
+// Next TODO
 func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Business().SearchBusiness(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Business().SearchBusiness(cli.cond)
 		if nil != err {
 			return nil, err
 		}
@@ -86,6 +89,7 @@ func (cli *iteratorInstBusiness) Next() (BusinessInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInstBusiness) ForEach(callbackItem func(item BusinessInterface) error) error {
 	for {
 

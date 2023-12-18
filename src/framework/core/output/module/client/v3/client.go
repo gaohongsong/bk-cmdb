@@ -19,6 +19,7 @@ import (
 	"configcenter/src/framework/core/discovery"
 )
 
+// CCV3Interface TODO
 type CCV3Interface interface {
 	ModuleGetter
 	SetGetter
@@ -40,6 +41,7 @@ type Client struct {
 	user            string
 }
 
+// New TODO
 func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	var c = &Client{}
 	c.httpCli = httpclient.NewHttpClient()
@@ -47,36 +49,53 @@ func New(conf config.Config, disc discovery.DiscoverInterface) *Client {
 	c.httpCli.SetHeader("Accept", "application/json")
 
 	c.disc = disc
-	c.SetSupplierAccount(conf.Get("core.supplierAccount"))
-	c.SetUser(conf.Get("core.user"))
-	c.SetAddress(conf.Get("core.ccaddress"))
+	c.supplierAccount = conf.Get("logics.supplierAccount")
+	c.user = conf.Get("logics.user")
+	c.SetAddress(conf.Get("logics.ccaddress"))
 	return c
 }
 
+// Host TODO
 func (cli *Client) Host() HostInterface {
 	return newHost(cli)
 }
+
+// Model TODO
 func (cli *Client) Model() ModelInterface {
 	return newModel(cli)
 }
+
+// Classification TODO
 func (cli *Client) Classification() ClassificationInterface {
 	return newClassification(cli)
 }
+
+// Attribute TODO
 func (cli *Client) Attribute() AttributeInterface {
 	return newAttribute(cli)
 }
+
+// CommonInst TODO
 func (cli *Client) CommonInst() CommonInstInterface {
 	return newCommonInst(cli)
 }
+
+// Group TODO
 func (cli *Client) Group() GroupInterface {
 	return newGroup(cli)
 }
+
+// Business TODO
 func (cli *Client) Business() BusinessInterface {
 	return newBusiness(cli)
 }
+
+// Module TODO
 func (cli *Client) Module() ModuleInterface {
 	return newModule(cli)
 }
+
+// Set TODO
 func (cli *Client) Set() SetInterface {
 	return newSet(cli)
 }
@@ -88,24 +107,31 @@ func (cli *Client) SetAddress(address string) {
 
 // SetSupplierAccount set a new supplieraccount
 func (cli *Client) SetSupplierAccount(supplierAccount string) {
-	cli.supplierAccount = supplierAccount
-	cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
+	if 0 != len(supplierAccount) {
+		cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
+	} else {
+		cli.httpCli.SetHeader(common.BKHTTPOwnerID, cli.supplierAccount)
+	}
+
 }
 
 // SetUser set a new user
 func (cli *Client) SetUser(user string) {
-	cli.user = user
-	cli.httpCli.SetHeader(common.BKHTTPHeaderUser, user)
+	if 0 != len(user) {
+		cli.httpCli.SetHeader(common.BKHTTPHeaderUser, user)
+	} else {
+		cli.httpCli.SetHeader(common.BKHTTPHeaderUser, cli.user)
+	}
 }
 
 // GetUser get the user
 func (cli *Client) GetUser() string {
-	return cli.user
+	return cli.httpCli.GetHeader(common.BKHTTPHeaderUser)
 }
 
 // GetSupplierAccount get the supplier account
 func (cli *Client) GetSupplierAccount() string {
-	return cli.supplierAccount
+	return cli.httpCli.GetHeader(common.BKHTTPOwnerID)
 }
 
 // GetAddress get the address

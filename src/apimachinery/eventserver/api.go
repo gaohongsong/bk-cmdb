@@ -13,96 +13,34 @@
 package eventserver
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    paraparse "configcenter/src/common/paraparse"
-    "configcenter/src/scene_server/event_server/types"
+	"context"
+	"net/http"
+
+	"configcenter/src/common/watch"
 )
 
-func(e *eventServer) Query(ctx context.Context, appID string, h util.Headers, dat paraparse.SubscribeCommonSearch) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/subscribe/search/%s/%s",  h.OwnerID, appID)
+// Watch event
+func (e *eventServer) Watch(ctx context.Context, h http.Header,
+	opts *watch.WatchEventOptions) (resp []*watch.WatchEventDetail, err error) {
+	response := new(watch.WatchEventResp)
+	err = e.client.Post().
+		WithContext(ctx).
+		Body(opts).
+		SubResourcef("/watch/resource/%s", opts.Resource).
+		WithHeaders(h).
+		Do().
+		Into(response)
 
-        err = e.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	if err != nil {
+		return nil, err
+	}
+
+	if err = response.CCError(); err != nil {
+		return nil, err
+	}
+
+	if response.Data == nil {
+		return make([]*watch.WatchEventDetail, 0), nil
+	}
+	return response.Data.Events, nil
 }
-
-func(e *eventServer) Ping(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/subscribe/ping"
-
-        err = e.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
-}
-
-func(e *eventServer) Telnet(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/subscribe/telnet"
-
-        err = e.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
-}
-
-func(e *eventServer) Subscribe(ctx context.Context, appID string, h util.Headers, subscription *types.Subscription) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/subscribe/%s/%s",  h.OwnerID, appID)
-
-        err = e.client.Post().
-        WithContext(ctx).
-        Body(subscription).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
-}
-
-func(e *eventServer) UnSubscribe(ctx context.Context, appID string, subscribeID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/subscribe/%s/%s/%s",  h.OwnerID, appID, subscribeID)
-
-        err = e.client.Delete().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
-}
-
-func(e *eventServer) Rebook(ctx context.Context, appID string, subscribeID string, h util.Headers, subscription *types.Subscription) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/subscribe/%s/%s/%s",  h.OwnerID, appID, subscribeID)
-
-        err = e.client.Put().
-        WithContext(ctx).
-        Body(subscription).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
-}
-

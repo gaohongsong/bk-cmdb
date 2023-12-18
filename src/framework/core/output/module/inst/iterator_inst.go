@@ -13,12 +13,12 @@
 package inst
 
 import (
+	"io"
+
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"io"
 )
 
 // Iterator the iterator interface for the Inst
@@ -34,7 +34,8 @@ type iteratorInst struct {
 	bufIdx      int
 }
 
-func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error) {
+// NewIteratorInst TODO
+func NewIteratorInst(target model.Model, cond common.Condition) (Iterator, error) {
 
 	iter := &iteratorInst{
 		targetModel: target,
@@ -46,7 +47,7 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 	iter.cond.SetStart(iter.bufIdx)
 	iter.cond.Field(model.ObjectID).Eq(target.GetID())
 
-	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).CommonInst().SearchInst(cond)
 	if nil != err {
 		return nil, err
 	}
@@ -57,13 +58,14 @@ func newIteratorInst(target model.Model, cond common.Condition) (Iterator, error
 
 }
 
+// Next TODO
 func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).CommonInst().SearchInst(cli.cond)
 		if nil != err {
 			return nil, err
 		}
@@ -87,6 +89,7 @@ func (cli *iteratorInst) Next() (CommonInstInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInst) ForEach(callbackItem func(item CommonInstInterface) error) error {
 	for {
 

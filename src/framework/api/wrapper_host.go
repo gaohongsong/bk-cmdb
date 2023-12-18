@@ -61,7 +61,6 @@ type FinderHostWrapper struct {
 
 // GetBizs return all business for the host
 func (cli *FinderHostWrapper) GetBizs() ([]*BusinessWrapper, error) {
-
 	bizWraps := make([]*BusinessWrapper, 0)
 	bizs := cli.host.GetBizs()
 	for _, biz := range bizs {
@@ -132,7 +131,7 @@ func (cli *HostWrapper) Transfer() inst.TransferInterface {
 }
 
 // SetTopo set the host topo
-func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string) error {
+func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string, act HostModuleActionType) error {
 
 	cli.host.SetBusinessID(bizID)
 
@@ -183,8 +182,15 @@ func (cli *HostWrapper) SetTopo(bizID int64, setName, moduleName string) error {
 		return fmt.Errorf("not found the module(%s)", moduleName)
 	}
 
-	fmt.Println("moduleids:", moduleIDS)
-	cli.host.SetModuleIDS(moduleIDS)
+	// fmt.Println("moduleids:", moduleIDS)
+	switch act {
+	case HostAppendModule:
+		cli.host.SetModuleIDS(moduleIDS, true)
+	case HostReplaceModule:
+		cli.host.SetModuleIDS(moduleIDS, false)
+	default:
+		return fmt.Errorf("unknown the action %s", act)
+	}
 
 	// reset the module
 	return nil
@@ -196,8 +202,17 @@ func (cli *HostWrapper) SetBusiness(bizID int64) {
 }
 
 // SetModuleIDS set the modules
-func (cli *HostWrapper) SetModuleIDS(moduleIDS []int64) {
-	cli.host.SetModuleIDS(moduleIDS)
+func (cli *HostWrapper) SetModuleIDS(moduleIDS []int64, act HostModuleActionType) error {
+	switch act {
+	case HostAppendModule:
+		cli.host.SetModuleIDS(moduleIDS, true)
+	case HostReplaceModule:
+		cli.host.SetModuleIDS(moduleIDS, false)
+	default:
+		return fmt.Errorf("unknown the action %s", act)
+	}
+
+	return nil
 }
 
 // GetModel get the model for the host
@@ -323,12 +338,12 @@ func (cli *HostWrapper) GetOperator() (string, error) {
 	return vals.String(fieldHostOperator), nil
 }
 
-// SetCPU set the cpu core num  for the host
+// SetCPU set the cpu logics num  for the host
 func (cli *HostWrapper) SetCPU(cpu int64) error {
 	return cli.host.SetValue(fieldCPU, cpu)
 }
 
-// GetCPU get the cpu core num
+// GetCPU get the cpu logics num
 func (cli *HostWrapper) GetCPU() (int, error) {
 	vals, err := cli.host.GetValues()
 	if nil != err {

@@ -13,14 +13,15 @@
 package httpserver
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/ssl"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // HttpServer is data struct of http server
@@ -36,18 +37,11 @@ type HttpServer struct {
 	webContainer *restful.Container
 }
 
+// NewHttpServer TODO
 func NewHttpServer(port uint, addr, sock string) *HttpServer {
 
 	wsContainer := restful.NewContainer()
 
-	// Add container filter to enable CORS
-	//	cors := restful.CrossOriginResourceSharing{
-	//		AllowedHeaders: []string{"Content-Type", "Accept"},
-	//		AllowedDomains: []string{},
-	//		CookiesAllowed: true,
-	//		Container:      wsContainer}
-	//	wsContainer.Filter(cors.Filter)
-	//	wsContainer.Filter(wsContainer.OPTIONSFilter)
 	return &HttpServer{
 		addr:         addr,
 		port:         port,
@@ -57,6 +51,7 @@ func NewHttpServer(port uint, addr, sock string) *HttpServer {
 	}
 }
 
+// SetSsl TODO
 func (s *HttpServer) SetSsl(cafile, certfile, keyfile, certPasswd string) {
 	s.caFile = cafile
 	s.certFile = certfile
@@ -65,16 +60,18 @@ func (s *HttpServer) SetSsl(cafile, certfile, keyfile, certPasswd string) {
 	s.isSSL = true
 }
 
+// RegisterWebServer TODO
 func (s *HttpServer) RegisterWebServer(rootPath string, filter restful.FilterFunction, actions []*Action) error {
-	//new a web service
+	// new a web service
 	ws := s.NewWebService(rootPath, filter)
 
-	//register action
+	// register action
 	s.RegisterActions(ws, actions)
 
 	return nil
 }
 
+// NewWebService TODO
 func (s *HttpServer) NewWebService(rootPath string, filter restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
 	if "" != rootPath {
@@ -91,9 +88,13 @@ func (s *HttpServer) NewWebService(rootPath string, filter restful.FilterFunctio
 
 	return ws
 }
+
+// GetWebContainer TODO
 func (s *HttpServer) GetWebContainer() *restful.Container {
 	return s.webContainer
 }
+
+// RegisterActions TODO
 func (s *HttpServer) RegisterActions(ws *restful.WebService, actions []*Action) {
 	blog.Debug("RegisterActions")
 	for _, action := range actions {
@@ -119,7 +120,7 @@ func (s *HttpServer) RegisterActions(ws *restful.WebService, actions []*Action) 
 			ws.Route(route)
 			blog.Debug("register delete api, url(%s)", action.Path)
 		default:
-			blog.Error("unrecognized action verb: %s", action.Verb)
+			blog.Errorf("unrecognized action verb: %s", action.Verb)
 		}
 	}
 }
@@ -130,25 +131,26 @@ func (s *HttpServer) registerActionsFilter(r *restful.RouteBuilder, filters []re
 	}
 }
 
+// ListenAndServe TODO
 func (s *HttpServer) ListenAndServe() error {
 
-	var chError = make(chan error)
-	//list and serve by addrport
+	var chError = make(chan error, 1)
+	// list and serve by addrport
 	go func() {
 		addrport := net.JoinHostPort(s.addr, strconv.FormatUint(uint64(s.port), 10))
 		httpserver := &http.Server{Addr: addrport, Handler: s.webContainer}
 		if s.isSSL {
 			tlsConf, err := ssl.ServerTslConf(s.caFile, s.certFile, s.keyFile, s.certPasswd)
 			if err != nil {
-				blog.Error("fail to load certfile, err:%s", err.Error())
+				blog.Errorf("fail to load certfile, err:%s", err.Error())
 				chError <- fmt.Errorf("fail to load certfile")
 				return
 			}
 			httpserver.TLSConfig = tlsConf
-			blog.Info("Start https service on(%s)", addrport)
+			blog.Infof("Start https service on(%s)", addrport)
 			chError <- httpserver.ListenAndServeTLS("", "")
 		} else {
-			blog.Info("Start http service on(%s)", addrport)
+			blog.Infof("Start http service on(%s)", addrport)
 			chError <- httpserver.ListenAndServe()
 		}
 	}()

@@ -13,51 +13,87 @@
 package adminserver
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"net/http"
+
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 )
 
-func(a *adminServer) ClearDatabase(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/clear"
+// ClearDatabase TODO
+func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/clear"
 
-        err = a.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(a *adminServer) Set(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/migrate/system/hostcrossbiz/%s", h.OwnerID)
+// Set TODO
+func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/migrate/system/hostcrossbiz/%s"
 
-        err = a.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(a *adminServer) Migrate(ctx context.Context, distribution string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/migrate/%s/%s",  distribution, h.OwnerID)
+// Migrate TODO
+func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) error {
+	resp := new(metadata.Response)
+	subPath := "/migrate/%s/%s"
 
-        err = a.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, distribution, ownerID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RunSyncDBIndex TODO
+func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) error {
+	resp := new(metadata.Response)
+	subPath := "/migrate/sync/db/index"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }

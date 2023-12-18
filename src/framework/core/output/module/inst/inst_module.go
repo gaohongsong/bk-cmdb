@@ -13,11 +13,13 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 )
 
 var _ ModuleInterface = (*module)(nil)
@@ -44,26 +46,34 @@ type module struct {
 	datas  types.MapStr
 }
 
+// SetTopo TODO
 func (cli *module) SetTopo(bizID, setID int64) {
 	cli.setID = setID
 	cli.bizID = bizID
 
 }
+
+// GetModel TODO
 func (cli *module) GetModel() model.Model {
 	return cli.target
 }
 
+// GetInstID TODO
 func (cli *module) GetInstID() (int64, error) {
 	return cli.datas.Int64(ModuleID)
 }
+
+// GetInstName TODO
 func (cli *module) GetInstName() string {
 	return cli.datas.String(ModuleName)
 }
 
+// GetValues TODO
 func (cli *module) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *module) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
@@ -86,7 +96,23 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 
 	// extract the required id
 	for _, attrItem := range attrs {
-		if attrItem.GetKey() && attrItem.GetID() != BusinessID && attrItem.GetID() != SetID {
+		if attrItem.GetKey() {
+
+			if attrItem.GetID() == BusinessID {
+				if 0 >= cli.bizID {
+					return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				}
+				cond.Field(BusinessID).Eq(cli.bizID)
+				continue
+			}
+
+			if attrItem.GetID() == SetID {
+				if 0 >= cli.setID {
+					return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				}
+				cond.Field(SetID).Eq(cli.setID)
+				continue
+			}
 
 			attrVal := cli.datas.String(attrItem.GetID())
 			if 0 == len(attrVal) {
@@ -98,12 +124,13 @@ func (cli *module) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().Module().SearchModules(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().SearchModules(cond)
 
 	return attrs, existItems, err
 
 }
 
+// IsExists TODO
 func (cli *module) IsExists() (bool, error) {
 
 	_, items, err := cli.search()
@@ -112,16 +139,29 @@ func (cli *module) IsExists() (bool, error) {
 	}
 	return 0 != len(items), nil
 }
+
+// Create TODO
 func (cli *module) Create() error {
 
-	cli.datas.Set(ParentID, cli.setID)
-	moduleID, err := client.GetClient().CCV3().Module().CreateModule(cli.bizID, cli.setID, cli.datas)
+	if 0 <= cli.setID {
+		cli.datas.Set(ParentID, cli.setID)
+		cli.datas.Set(SetID, cli.setID)
+	}
+
+	if 0 < cli.bizID {
+		cli.datas.Set(BusinessID, cli.bizID)
+	}
+
+	moduleID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().CreateModule(cli.bizID,
+		cli.setID, cli.datas)
 	if nil != err {
 		return err
 	}
 	cli.datas.Set(ModuleID, moduleID)
 	return nil
 }
+
+// Update TODO
 func (cli *module) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -139,8 +179,14 @@ func (cli *module) Update() error {
 		cli.datas.Remove(key)
 	})
 
-	cli.datas.Set(ParentID, cli.setID)
-	cli.datas.Remove("create_time") //invalid check , need to delete
+	if 0 < cli.setID {
+		cli.datas.Set(ParentID, cli.setID)
+		cli.datas.Set(SetID, cli.setID)
+	}
+	if 0 < cli.bizID {
+		cli.datas.Set(BusinessID, cli.bizID)
+	}
+	cli.datas.Remove("create_time") // invalid check , need to delete
 	for _, existItem := range existItems {
 
 		instID, err := existItem.Int64(ModuleID)
@@ -150,8 +196,10 @@ func (cli *module) Update() error {
 
 		cli.datas.Remove(ModuleID)
 
-		err = client.GetClient().CCV3().Module().UpdateModule(cli.bizID, cli.setID, instID, cli.datas)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().UpdateModule(cli.bizID,
+			cli.setID, instID, cli.datas)
 		if nil != err {
+			log.Infof("failed to  update the module (%#v), error info is %s", existItem, err.Error())
 			return err
 		}
 
@@ -160,8 +208,11 @@ func (cli *module) Update() error {
 	}
 	return nil
 }
+
+// Save TODO
 func (cli *module) Save() error {
 
+	// fmt.Println("bizID:", cli.bizID, "setID:", cli.setID)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {

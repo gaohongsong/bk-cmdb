@@ -13,37 +13,115 @@
 package inst
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"context"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *instanceClient) QueryAudit(ctx context.Context, h util.Headers, input *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s", h.OwnerID)
+// SearchAuditDict TODO
+func (t *instanceClient) SearchAuditDict(ctx context.Context, h http.Header) (*metadata.Response, error) {
+	resp := new(metadata.Response)
+	subPath := "/find/audit_dict"
 
-	err = t.client.Post().
+	err := t.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return nil, errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp, nil
+}
+
+// SearchAuditList TODO
+func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header,
+	input *metadata.AuditQueryInput) (*metadata.Response, error) {
+	resp := new(metadata.Response)
+	subPath := "/findmany/audit_list"
+
+	err := t.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return nil, errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp, nil
+}
+
+// SearchAuditDetail TODO
+func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header,
+	input *metadata.AuditDetailQueryInput) (*metadata.Response, error) {
+	resp := new(metadata.Response)
+	subPath := "/find/audit"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !resp.Result {
+		return nil, errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp, nil
+}
+
+// GetInternalModule TODO
+func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string,
+	h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
+	resp = new(metadata.SearchInnterAppTopoResult)
+	subPath := "/topo/internal/%s/%s"
+
+	err = t.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, ownerID, appID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/topo/internal/%s/%s", ownerID, appID)
+// SearchBriefBizTopo TODO
+func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64,
+	input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error) {
+	resp = new(metadata.SearchBriefBizTopoResult)
+	subPath := "/find/topo/tree/brief/biz/%d"
 
-	err = t.client.Get().
+	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(input).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

@@ -10,10 +10,10 @@
  * limitations under the License.
  */
 
+// Package language TODO
 package language
 
 import (
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 // ccErrorHelper CC 错误处理接口的实现
@@ -44,14 +46,14 @@ func (cli *ccLanguageHelper) Language(language string, key string) string {
 
 }
 
-// Languagef returns an langauge that adapt to the language interface which accepts arguments
+// Languagef returns an language that adapt to the language interface which accepts arguments
 func (cli *ccLanguageHelper) Languagef(language string, key string, args ...interface{}) string {
 	return cli.languageStrf(language, key, args...)
 }
 
-// load load language package file from dir
+// Load load language package file from dir
 func (cli *ccLanguageHelper) Load(lang map[string]LanguageMap) {
-	blog.InfoJSON("loaded language resource: %s", lang)
+	// blog.V(3).Infof("loaded language resource: %#v", lang)
 	cli.lang = lang
 }
 
@@ -102,7 +104,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 		return nil
 
 	})
-	blog.Infof("loaded language from dir %v", langMap)
+	// blog.Infof("loaded language from dir %v", langMap)
 
 	if walkerr != nil {
 		return nil, walkerr
@@ -111,6 +113,7 @@ func LoadLanguageResourceFromDir(dir string) (map[string]LanguageMap, error) {
 	return langMap, nil
 }
 
+// GetLang TODO
 func (cli *ccLanguageHelper) GetLang() map[string]LanguageMap {
 	return cli.lang
 }
@@ -145,6 +148,7 @@ func (cli *ccLanguageHelper) getLanguageStr(codemgr LanguageMap, key string) str
 
 var replayHolderReg = regexp.MustCompile(`\[(.*?)\]`)
 
+// languageStr TODO
 // errorStr 错误码转换成错误信息，此方法适合不需要动态填充参数的错误信息
 func (cli *ccLanguageHelper) languageStr(language, key string) string {
 
@@ -156,7 +160,6 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 	}
 
 	ms := replayHolderReg.FindAllString(key, -1)
-	blog.Infof("key %s match %v", key, ms)
 	if len(ms) > 0 {
 		fmt.Printf("ms: %s\n", ms)
 		key = replayHolderReg.ReplaceAllString(key, "[]")
@@ -174,6 +177,7 @@ func (cli *ccLanguageHelper) languageStr(language, key string) string {
 	return cli.getLanguageStr(codemgr, key)
 }
 
+// languageStrf TODO
 // errorStrf retruns the error message string by code within language, format should define within error resource file
 func (cli *ccLanguageHelper) languageStrf(language, key string, args ...interface{}) string {
 

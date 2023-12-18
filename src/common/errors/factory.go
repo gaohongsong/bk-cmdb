@@ -12,15 +12,18 @@
 
 package errors
 
-// New create new CCErrorIf instance,
+// EmptyErrorsSetting empty errors setting
+var EmptyErrorsSetting = map[string]ErrorCode{}
+
+// NewFactory create new CCErrorIf instance,
 // dir is directory of errors description resource
-func New(dir string) (CCErrorIf, error) {
+func NewFactory(dir string) (CCErrorIf, error) {
 
 	tmp := &ccErrorHelper{errCode: make(map[string]ErrorCode)}
 
 	errcode, err := LoadErrorResourceFromDir(dir)
-	if nil != err {
-		//blog.Error("failed to load the error resource, error info is %s", err.Error())
+	if err != nil {
+		// blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}
 	tmp.Load(errcode)
@@ -28,8 +31,16 @@ func New(dir string) (CCErrorIf, error) {
 	return tmp, nil
 }
 
+// NewFromCtx TODO
 func NewFromCtx(errcode map[string]ErrorCode) CCErrorIf {
 	tmp := &ccErrorHelper{}
 	tmp.Load(errcode)
 	return tmp
+}
+
+// New 根据response返回的信息产生错误
+func New(errCode int, errMsg string) CCErrorCoder {
+	return &ccError{code: errCode, callback: func() string {
+		return errMsg
+	}}
 }

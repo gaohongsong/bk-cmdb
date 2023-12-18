@@ -24,6 +24,7 @@ type OutputerKey string
 
 // Puter send the data input
 type Puter interface {
+	// Put TODO
 	// save into the storage
 	Put(data types.MapStr) error
 }
@@ -35,7 +36,8 @@ type Outputer interface {
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
-	// Run the output main loop. This should block until singnalled to stop by invocation of the Stop() method.
+	// Put TODO
+	// Run the output main loop. This should block until be signalled to stop by invocation of the Stop() method.
 	Put(data types.MapStr) error
 
 	// Stop is the invoked to signal that the Run() method should its execution.
@@ -53,10 +55,10 @@ type ModelOutputer interface {
 	CreateClassification(name string) model.Classification
 
 	// FindClassificationsLikeName find a array of the classification by the name
-	FindClassificationsLikeName(name string) (model.ClassificationIterator, error)
+	FindClassificationsLikeName(supplierAccount, name string) (model.ClassificationIterator, error)
 
 	// FindClassificationsByCondition find a array of the classification by the condition
-	FindClassificationsByCondition(condition common.Condition) (model.ClassificationIterator, error)
+	FindClassificationsByCondition(supplierAccount string, cond common.Condition) (model.ClassificationIterator, error)
 }
 
 // CustomOutputer the interface which used to maintence the custom outputer

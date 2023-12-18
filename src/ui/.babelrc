@@ -1,18 +1,34 @@
 {
   "presets": [
-    ["env", {
-      "modules": false,
-      "targets": {
-        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "usage",
+        "corejs": 3,
+        "debug": false
       }
-    }],
-    "stage-2"
+    ],
+    [
+      "@vue/babel-preset-jsx",
+      {
+        // https://www.npmjs.com/package/@vue/babel-preset-jsx
+        "compositionAPI": "naruto"
+      }
+    ]
   ],
-  "plugins": ["transform-runtime"],
-  "env": {
-    "test": {
-      "presets": ["env", "stage-2"],
-      "plugins": ["istanbul"]
-    }
-  }
+  "plugins": [
+    "@babel/plugin-transform-runtime",
+    "@babel/plugin-transform-object-assign",
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-proposal-function-sent",
+    "@babel/plugin-transform-export-namespace-from",
+    "@babel/plugin-transform-numeric-separator",
+    "@babel/plugin-proposal-throw-expressions",
+    "@babel/plugin-transform-async-to-generator",
+    ["prismjs", {
+      "languages": ["javascript", "json"],
+      "plugins": ["line-numbers"],
+      "css": true
+    }]
+  ]
 }

@@ -13,8 +13,9 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMapBuilder(t *testing.T) {
@@ -26,11 +27,4 @@ func TestMapBuilder(t *testing.T) {
 	assert.Equal(t, map[string]interface{}{"a": 1, "b": 2, "c": []interface{}{3}}, builder.Build())
 	builder.Delete("a")
 	assert.Equal(t, map[string]interface{}{"b": 2, "c": []interface{}{3}}, builder.Build())
-}
-
-func TestMapFromJSON(t *testing.T) {
-	info := `{
-		"InnerIP" : "127.0.0.1"
-	}`
-	assert.Equal(t, map[string]interface{}{"InnerIP": "127.0.0.1"}, NewMapFromJSON(info))
 }

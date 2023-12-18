@@ -14,11 +14,11 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/core/log"
+	// "configcenter/src/framework/logics/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	//"fmt"
+	// "fmt"
 	"io"
 )
 
@@ -34,7 +34,8 @@ type iteratorInstSet struct {
 	bufIdx      int
 }
 
-func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
+// NewIteratorInstSet TODO
+func NewIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
 
 	iter := &iteratorInstSet{
 		targetModel: target,
@@ -45,11 +46,11 @@ func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator,
 	iter.cond.SetLimit(DefaultLimit)
 	iter.cond.SetStart(iter.bufIdx)
 
-	existItems, err := client.GetClient().CCV3().Set().SearchSets(iter.cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: target.GetSupplierAccount()}).Set().SearchSets(iter.cond)
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("set next", existItems, iter.cond.ToMapStr())
+	// fmt.Println("set next", existItems, iter.cond.ToMapStr())
 
 	iter.buffer = append(iter.buffer, existItems...)
 
@@ -57,13 +58,14 @@ func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator,
 
 }
 
+// Next TODO
 func (cli *iteratorInstSet) Next() (SetInterface, error) {
 
 	if len(cli.buffer) == cli.bufIdx {
 
 		cli.cond.SetStart(cli.bufIdx)
 
-		existItems, err := client.GetClient().CCV3().Set().SearchSets(cli.cond)
+		existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.targetModel.GetSupplierAccount()}).Set().SearchSets(cli.cond)
 		if nil != err {
 			return nil, err
 		}
@@ -87,6 +89,7 @@ func (cli *iteratorInstSet) Next() (SetInterface, error) {
 	return returnItem, nil
 }
 
+// ForEach TODO
 func (cli *iteratorInstSet) ForEach(callbackItem func(item SetInterface) error) error {
 	for {
 

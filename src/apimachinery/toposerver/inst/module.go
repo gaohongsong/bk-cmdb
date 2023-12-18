@@ -14,64 +14,157 @@ package inst
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 )
 
-func (t *instanceClient) CreateModule(ctx context.Context, appID string, setID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/module/%s/%s", appID, setID)
+// CreateModule TODO
+func (t *instanceClient) CreateModule(ctx context.Context, appID, setID int64, h http.Header,
+	dat map[string]interface{}) (mapstr.MapStr, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateInstResult)
+	subPath := "/module/%d/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath, appID, setID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// DeleteModule TODO
+func (t *instanceClient) DeleteModule(ctx context.Context, appID, setID, moduleID int64,
+	h http.Header) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
+	subPath := "/module/%d/%d/%d"
+
+	err := t.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, appID, setID, moduleID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateModule TODO
+func (t *instanceClient) UpdateModule(ctx context.Context, appID, setID, moduleID int64, h http.Header,
+	dat map[string]interface{}) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
+	subPath := "/module/%d/%d/%d"
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath, appID, setID, moduleID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SearchModule TODO
+func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID, setID int64, h http.Header,
+	s *params.SearchParams) (*metadata.InstResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.SearchInstResult)
+	subPath := "/module/search/%s/%d/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, ownerID, appID, setID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// SearchModuleByCondition TODO
+func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/findmany/module/biz/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchModuleBatch TODO
+func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header,
+	s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
+	resp = new(metadata.MapArrayResponse)
+	subPath := "/findmany/module/bk_biz_id/%s"
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchModuleWithRelation TODO
+func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header,
+	dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/findmany/module/with_relation/biz/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (t *instanceClient) DeleteModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
-
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (t *instanceClient) UpdateModule(ctx context.Context, appID string, setID string, moduleID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/module/%s/%s/%s", appID, setID, moduleID)
-
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (t *instanceClient) SearchModule(ctx context.Context, appID string, setID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/module/search/%s/%s/%s", h.OwnerID, appID, setID)
-
-	err = t.client.Put().
-		WithContext(ctx).
-		Body(s).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

@@ -1,21 +1,22 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package input
 
 import (
-	"configcenter/src/framework/core/output"
 	"context"
 	"time"
+
+	"configcenter/src/framework/core/output"
 )
 
 // InputerStatus the inputer status type definition.
@@ -92,13 +93,14 @@ type Manager interface {
 	// Run start the business cycle until the stop method is called.
 	Run(ctx context.Context, inputerCtx InputerContext)
 
-	// Stop
+	// Stop TODO
 	Stop() error
 }
 
 // Inputer is the interface that must be implemented by every Inputer.
 type Inputer interface {
 
+	// Name TODO
 	// Description the Inputer description.
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string

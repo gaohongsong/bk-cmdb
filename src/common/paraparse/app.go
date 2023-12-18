@@ -13,82 +13,88 @@
 package params
 
 import (
-	"configcenter/src/common"
-	"errors"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
+
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
-//common search struct
+// SearchParams TODO
+// common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
 	Fields    []string               `json:"fields,omitempty"`
-	Native    int                    `json:"native,omitempty"`
 }
 
-//common result struct
-type CommonResult struct {
-	Result  bool        `json:"result"`
-	Code    int         `json:"int"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
-func ParseCommonParams(input []interface{}, output map[string]interface{}) error {
+// ParseCommonParams parse common params
+func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
-		j, ok := i.(map[string]interface{})
-		if false == ok {
-			return errors.New("condition error")
-		}
-		field, ok := j["field"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		operator, ok := j["operator"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		value := j["value"]
-		switch operator {
+		switch i.Operator {
 		case common.BKDBEQ:
-			objtype := reflect.TypeOf(value)
-			switch objtype.Kind() {
-			case reflect.Int:
-				output[field] = value
-			case reflect.Float64:
-				output[field] = value
-			case reflect.Float32:
-				output[field] = value
-			case reflect.String:
-				valStr := value.(string)
-				output[field] = SpeceialCharChange(valStr)
-			default:
-				//d := make(map[string]interface{})
-				//d[common.BKDBLIKE] = value
-				output[field] = value
-			}
-
-		default:
-			d := make(map[string]interface{})
-			valStr, ok := value.(string)
-			if ok {
-				d[operator] = SpeceialCharChange(valStr)
+			output[i.Field] = i.Value
+			/*if reflect.TypeOf(i.Value).Kind() == reflect.String {
+				output[i.Field] = SpecialCharChange(i.Value.(string))
 			} else {
-				d[operator] = value
-			}
-			output[field] = d
-		}
+			output[i.Field] = i.Value
+			}*/
+		case common.BKDBLIKE:
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			// Case insensitivity to match upper and lower cases
+			regex[common.BKDBOPTIONS] = "i"
+			output[i.Field] = regex
 
+		case common.BKDBMULTIPLELike:
+			multi, ok := i.Value.([]interface{})
+			if !ok {
+				return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+			}
+			fields := make([]interface{}, 0)
+			for _, m := range multi {
+				mstr, ok := m.(string)
+				if !ok {
+					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
+				}
+				fields = append(fields,
+					mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr, common.BKDBOPTIONS: "i"}})
+			}
+			if len(fields) != 0 {
+				// only when the fields is none empty, then the fields is valid.
+				// a or operator can not have a empty value in mongodb.
+				output[common.BKDBOR] = fields
+			}
+		case common.BKDBIN:
+			d := make(map[string]interface{})
+			if i.Value == nil {
+				d[i.Operator] = make([]interface{}, 0)
+			} else {
+				d[i.Operator] = i.Value
+			}
+			output[i.Field] = d
+		default:
+			// 对于有两个或者更多条件的Field, 比如 B > Field > A, 先判断是否创建了这个Field的map，防止条件覆盖，导致前一个条件不生效
+			if _, ok := output[i.Field]; !ok {
+				output[i.Field] = make(map[string]interface{})
+			}
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("filed %s only support for map[string]interface{} type", i.Field)
+			}
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
+		}
 	}
 	return nil
 }
 
-func SpeceialCharChange(targetStr string) string {
+// SpecialCharChange change special char
+func SpecialCharChange(targetStr string) string {
 
-	re := regexp.MustCompile(`([\^\$\(\)\*\+\?\.\\\|\[\]\{\}])`)
+	re := regexp.MustCompile("[.()\\\\|\\[\\]\\*{}\\^\\$\\?]")
 	delItems := re.FindAllString(targetStr, -1)
 	tmp := map[string]struct{}{}
 	for _, target := range delItems {
@@ -100,21 +106,4 @@ func SpeceialCharChange(targetStr string) string {
 	}
 
 	return targetStr
-}
-
-func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
-	output := make(map[string]interface{})
-	for i, j := range input {
-		objtype := reflect.TypeOf(j)
-		switch objtype.Kind() {
-		case reflect.String:
-			d := make(map[string]interface{})
-			targetStr := j.(string)
-			d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
-			output[i] = d
-		default:
-			output[i] = j
-		}
-	}
-	return output
 }

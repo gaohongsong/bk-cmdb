@@ -14,87 +14,83 @@ package object
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	obj "configcenter/src/scene_server/topo_server/topo_service/actions/object"
+	"configcenter/src/common/metadata"
 )
 
-func (t *object) CreateModel(ctx context.Context, h util.Headers, model *obj.MainLineObject) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/model/mainline"
+// CreateModel TODO
+func (t *object) CreateModel(ctx context.Context, h http.Header,
+	model *metadata.MainLineObject) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/create/topomodelmainline"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(model).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) DeleteModel(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/mainline/owners/%s/objectids/%s", h.OwnerID, objID)
+
+// DeleteModel TODO
+func (t *object) DeleteModel(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/delete/topomodelmainline/object/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectModel(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/%s", h.OwnerID)
 
-	err = t.client.Get().
+// SelectModel TODO
+func (t *object) SelectModel(ctx context.Context, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error) {
+	resp = new(metadata.MainlineObjectTopoResult)
+	subPath := "/find/topomodelmainline"
+
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectModelByClsID(ctx context.Context, clsID string, objID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/model/%s/%s/%s", h.OwnerID, clsID, objID)
+
+// SelectModelByClsID TODO
+func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string,
+	h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/topo/model/%s/%s/%s"
 
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID, clsID, objID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
-func (t *object) SelectInst(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/%s/%s", h.OwnerID, appID)
 
-	err = t.client.Get().
+// SelectInst TODO
+func (t *object) SelectInst(ctx context.Context, bizID int64, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/find/topoinst/biz/%d"
+
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-func (t *object) SelectInstChild(ctx context.Context, objID string, appID string, instID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/child/%s/%s/%s/%s", h.OwnerID, objID, appID, instID)
-
-	err = t.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

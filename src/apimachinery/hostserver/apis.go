@@ -13,698 +13,855 @@
 package hostserver
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/common/paraparse"
-    "configcenter/src/scene_server/host_server/host_service/actions/hosts"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"net/http"
+
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
+	"configcenter/src/kube/types"
 )
 
-func (hs *hostServer) DeleteHostBatch(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/host/batch"
+// DeleteHostBatch TODO
+func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/batch"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostDetailByID(ctx context.Context, hostID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/hosts/%s/%s", h.OwnerID, hostID)
+// GetHostInstanceProperties TODO
+func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string,
+	h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
+	subPath := "/hosts/%s/%s"
 
+	resp = new(metadata.HostInstancePropertiesResult)
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID, hostID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSnapInfo(ctx context.Context, hostID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/host/snapshot/%s", hostID)
-
-	err = hs.client.Get().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) AddHost(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/hosts/addhost"
+// AddHost TODO
+func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/add"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostFromAgent(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// AddHostToResourcePool TODO
+func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header,
+	dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/add/resource"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// AddHostFromAgent TODO
+func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
 	subPath := "/host/add/agent"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// SyncHost TODO
+func (hs *hostServer) SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/sync/new/host"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// GetHostFavourites TODO
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header,
+	dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "hosts/favorites/search"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostFavourite(ctx context.Context, h util.Headers, dat *hosts.FavouriteParms) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// AddHostFavourite TODO
+func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header,
+	dat *metadata.FavouriteParms) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "hosts/favorites"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("hosts/favorites/%s", id)
+// UpdateHostFavouriteByID TODO
+func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header,
+	data *metadata.FavouriteParms) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "hosts/favorites/%s"
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, id).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("hosts/favorites/%s", id)
+// DeleteHostFavouriteByID TODO
+func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "hosts/favorites/%s"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, id).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/hosts/favorites/%s/incr", id)
+// IncrHostFavouritesCount TODO
+func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/favorites/%s/incr"
 
 	err = hs.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, id).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHistory(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/history"
+// AddHistory TODO
+func (hs *hostServer) AddHistory(ctx context.Context, h http.Header,
+	dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/history"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/history/%s/%s", start, limit)
+// GetHistorys TODO
+func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string,
+	h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/history/%s/%s"
 
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, start, limit).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddHostMutiltAppModuleRelation(ctx context.Context, h util.Headers, dat *hosts.CloudHostModuleParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// AddHostMultiAppModuleRelation TODO
+func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.Header,
+	dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/modules/biz/mutiple"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostModuleRelation(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// TransferHostModule TODO
+func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header,
+	params map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/hosts/emptymodule"
+// MoveHost2EmptyModule TODO
+func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/idle"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/hosts/faultmodule"
+// MoveHost2FaultModule TODO
+func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/fault"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/hosts/resource"
+// MoveHostToResourcePool TODO
+func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/resource"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AssignHostToApp(ctx context.Context, h util.Headers, dat *hosts.DefaultModuleHostConfigParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/hosts/assgin"
+// TransferHostAcrossBusiness transfer hosts across biz
+func (hs *hostServer) TransferHostAcrossBusiness(ctx context.Context, header http.Header,
+	option *metadata.TransferHostAcrossBusinessParameter) errors.CCErrorCoder {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/hosts/modules/across/biz"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AssignHostToApp TODO
+func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/resource/idle"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AssignHostToAppModule(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/host/add/module"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) SaveUserCustom(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// SaveUserCustom TODO
+func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustom(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// GetUserCustom TODO
+func (hs *hostServer) GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom/user/search"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetDefaultCustom(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+// GetDefaultCustom TODO
+func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
 	subPath := "/usercustom/default/search"
 
 	err = hs.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("getAgentStatus/%s", appID)
-
-	err = hs.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/openapi/host/%s", appID)
+// CloneHostProperty TODO
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header,
+	dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/property/clone"
 
 	err = hs.client.Put().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostByAppID(ctx context.Context, appID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/host/updateHostByAppID/%s", appID)
+// MoveSetHost2IdleModule TODO
+func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
+	dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/modules/idle/set"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchHost TODO
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+	resp = new(metadata.SearchHostResult)
+	subPath := "/hosts/search"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchHostWithAsstDetail TODO
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+	resp = new(metadata.SearchHostResult)
+	subPath := "/hosts/search/asstdetail"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// UpdateHostBatch TODO
+func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/batch"
 
 	err = hs.client.Put().
 		WithContext(ctx).
 		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID string, field string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/host/getHostListByAppidAndField/%s/%s", appID, field)
+// UpdateHostPropertyBatch TODO
+func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header,
+	data map[string]interface{}) errors.CCErrorCoder {
 
-	err = hs.client.Get().
+	resp := new(metadata.Response)
+	subPath := "/hosts/property/batch"
+
+	err := hs.client.Put().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
 }
 
-func (hs *hostServer) HostSearchByIP(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/gethostlistbyip"
+// CreateDynamicGroup is dynamic group create action api machinery.
+func (hs *hostServer) CreateDynamicGroup(ctx context.Context, header http.Header,
+	data map[string]interface{}) (resp *metadata.IDResult, err error) {
+
+	resp = new(metadata.IDResult)
+	subPath := "/dynamicgroup"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchByModuleID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/getmodulehostlist"
+// UpdateDynamicGroup is dynamic group update action api machinery.
+func (hs *hostServer) UpdateDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
 
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) HostSearchBySetID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/getsethostlist"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) HostSearchByAppID(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/getapphostlist"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) HostSearchByProperty(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/gethostsbyproperty"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) GetIPAndProxyByCompany(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/getIPAndProxyByCompany"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) UpdateCustomProperty(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/openapi/updatecustomproperty"
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "openapi/host/clonehostproperty"
+// DeleteDynamicGroup is dynamic group delete action api machinery.
+func (hs *hostServer) DeleteDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.BaseResp, err error) {
 
-	err = hs.client.Put().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) GetHostAppByCompanyId(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/openapi/host/getHostAppByCompanyId"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) DelHostInApp(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/openapi/host/delhostinapp"
-
-	err = hs.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) GetGitServerIp(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/openapi/host/getGitServerIp"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) GetPlat(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/plat"
-
-	err = hs.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) CreatePlat(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/plat"
-
-	err = hs.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) DelPlat(ctx context.Context, cloudID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/plat/%s", cloudID)
+	resp = new(metadata.BaseResp)
+	subPath := "/dynamicgroup/%s/%s"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearch(ctx context.Context, h util.Headers, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/search"
+// GetDynamicGroup is dynamic group query detail action api machinery.
+func (hs *hostServer) GetDynamicGroup(ctx context.Context, bizID, id string,
+	header http.Header) (resp *metadata.GetDynamicGroupResult, err error) {
+
+	resp = new(metadata.GetDynamicGroupResult)
+	subPath := "/dynamicgroup/%s/%s"
+
+	err = hs.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchDynamicGroup is dynamic group search action api machinery.
+func (hs *hostServer) SearchDynamicGroup(ctx context.Context, bizID string, header http.Header,
+	data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error) {
+
+	resp = new(metadata.SearchDynamicGroupResult)
+	subPath := "/dynamicgroup/search/%s"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) HostSearchWithAsstDetail(ctx context.Context, h util.Headers, dat *params.HostCommonSearch) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/search/asstdetail"
+// ExecuteDynamicGroup is dynamic group execute action base on conditions api machinery.
+func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/dynamicgroup/data/%s/%s"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateHostBatch(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/host/batch"
+// HostSearch TODO
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header,
+	params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
+
+	resp = new(metadata.QueryInstResult)
+	subPath := "hosts/search"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// ListBizHostsTopo TODO
+func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64,
+	params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error) {
+
+	resp = new(metadata.SuccessResponse)
+	subPath := "/hosts/app/%d/list_hosts_topo"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// CreateCloudArea TODO
+func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+
+	resp = new(metadata.CreatedOneOptionResult)
+	subPath := "/create/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// CreateManyCloudArea TODO
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+
+	resp = new(metadata.CreateManyCloudAreaResult)
+	subPath := "/createmany/cloudarea"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// UpdateCloudArea TODO
+func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
+
+	resp = new(metadata.Response)
+	subPath := "/update/cloudarea/%d"
 
 	err = hs.client.Put().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, cloudID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) AddUserCustomQuery(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := "/userapi"
+// SearchCloudArea TODO
+func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header,
+	params map[string]interface{}) (resp *metadata.SearchResp, err error) {
+
+	resp = new(metadata.SearchResp)
+	subPath := "/findmany/cloudarea"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) UpdateUserCustomQuery(ctx context.Context, businessID string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+// DeleteCloudArea TODO
+func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response,
+	err error) {
 
-	err = hs.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
-		Do().
-		Into(resp)
-	return
-}
-
-func (hs *hostServer) DeleteUserCustomQuery(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+	resp = new(metadata.Response)
+	subPath := "/delete/cloudarea/%d"
 
 	err = hs.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, cloudID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQuery(ctx context.Context, businessID string, h util.Headers, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/userapi/search/%s", businessID)
+// FindCloudAreaHostCount TODO
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header,
+	option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+	resp = new(metadata.CloudAreaHostCountResult)
+	subPath := "/findmany/cloudarea/hostcount"
 
 	err = hs.client.Post().
 		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (hs *hostServer) GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
+// SearchHostWithKube search host with k8s condition
+func (hs *hostServer) SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (
+	*metadata.SearchHost, errors.CCErrorCoder) {
 
-	err = hs.client.Get().
+	result := new(metadata.SearchHostResult)
+	subPath := "/hosts/kube/search"
+
+	err := hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(req).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
-		Into(resp)
-	return
+		Into(result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return result.Data, nil
 }
 
-func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/userapi/data/%s/%s/%s/%s", businessID, id, start, limit)
+// AddCloudHostToBiz add cloud host to biz idle module
+func (hs *hostServer) AddCloudHostToBiz(ctx context.Context, h http.Header, opt *metadata.AddCloudHostToBizParam) (
+	*metadata.RspIDs, errors.CCErrorCoder) {
 
-	err = hs.client.Get().
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/createmany/cloud_hosts"
+
+	err := hs.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// DeleteCloudHostFromBiz delete cloud hosts from biz
+func (hs *hostServer) DeleteCloudHostFromBiz(ctx context.Context, header http.Header,
+	option *metadata.DeleteCloudHostFromBizParam) errors.CCErrorCoder {
+
+	resp := new(metadata.CreateBatchResult)
+	subPath := "/deletemany/cloud_hosts"
+
+	err := hs.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// BindAgent bind agent to host
+func (hs *hostServer) BindAgent(ctx context.Context, h http.Header,
+	params *metadata.BindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/bind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}
+
+// UnbindAgent unbind agent to host
+func (hs *hostServer) UnbindAgent(ctx context.Context, h http.Header,
+	params *metadata.UnbindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/unbind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }

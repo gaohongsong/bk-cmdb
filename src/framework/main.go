@@ -1,19 +1,28 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package main
 
 import (
+	"fmt"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+	"time"
+
 	"configcenter/src/common"
+	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/config"
@@ -23,19 +32,11 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
-	"time"
+	_ "configcenter/src/framework/plugins"
 
-	"configcenter/src/common/blog"
+	// load all plugins
 
-	"fmt"
 	"github.com/spf13/pflag"
-
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
-
-	_ "configcenter/src/framework/plugins" // load all plugins
 )
 
 // APPNAME the name of this application, will be use as identification mark for monitoring
@@ -53,15 +54,16 @@ func main() {
 
 	log.SetLoger(&log.Logger{
 		Info: func(args ...interface{}) {
-			blog.Info("%v", args)
+			blog.Infof("%v", args)
 		},
 		Infof:  blog.Infof,
 		Fatal:  blog.Fatal,
 		Fatalf: blog.Fatalf,
 		Error: func(args ...interface{}) {
-			blog.Error("%v", args)
+			blog.Errorf("%v", args)
 		},
-		Errorf: blog.Errorf,
+		Errorf:   blog.Errorf,
+		Warningf: blog.Warnf,
 	})
 
 	if err := config.Init(opt); err != nil {
@@ -76,7 +78,16 @@ func main() {
 	}
 
 	if "" != opt.Regdiscv {
-		rd := discovery.NewRegDiscover(APPNAME, opt.Regdiscv, server.GetAddr(), server.GetPort(), false)
+		disClient := zk.NewZkClient(opt.Regdiscv, 40*time.Second)
+		if err := disClient.Start(); err != nil {
+			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			return
+		}
+		if err := disClient.Ping(); err != nil {
+			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			return
+		}
+		rd := discovery.NewRegDiscover(APPNAME, disClient, server.GetAddr(), server.GetPort(), false)
 		go func() {
 			rd.Start()
 		}()
@@ -93,7 +104,9 @@ func main() {
 		client.NewForConfig(config.Get(), nil)
 	}
 
+	// initial the background framework manager.
 	api.Init()
+
 	defer func() {
 		blog.CloseLogs()
 		api.UnInit()
@@ -110,7 +123,7 @@ func main() {
 	server.RegisterActions(api.Actions()...)
 	server.RegisterActions(metricManager.Actions()...)
 
-	httpChan := make(chan error)
+	httpChan := make(chan error, 1)
 	go func() { httpChan <- server.ListenAndServe() }()
 
 	sigs := make(chan os.Signal, 1)

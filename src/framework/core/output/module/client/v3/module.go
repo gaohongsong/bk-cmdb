@@ -13,12 +13,14 @@
 package v3
 
 import (
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/types"
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/tidwall/gjson"
+
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/types"
 )
 
 // ModuleGetter the module getter interface
@@ -51,7 +53,7 @@ func (cli *Module) CreateModule(bizID, setID int64, data types.MapStr) (int, err
 	data.Set(SupplierAccount, cli.cli.GetSupplierAccount())
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/%d/%d", cli.cli.GetAddress(), bizID, setID)
-
+	// fmt.Println("create url:", targetURL, data)
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return 0, err
@@ -65,7 +67,7 @@ func (cli *Module) CreateModule(bizID, setID int64, data types.MapStr) (int, err
 	}
 
 	// parse id
-	id := gs.Get("data.id").Int()
+	id := gs.Get("data.bk_module_id").Int()
 
 	return int(id), nil
 }
@@ -94,7 +96,7 @@ func (cli *Module) DeleteModule(bizID, setID, moduleID int64) error {
 func (cli *Module) UpdateModule(bizID, setID, moduleID int64, data types.MapStr) error {
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/%d/%d/%d", cli.cli.GetAddress(), bizID, setID, moduleID)
-
+	// fmt.Println("url:", targetURL, data)
 	rst, err := cli.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {
 		return err
@@ -135,8 +137,8 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 		},
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID, setID)
-	//fmt.Println(targetURL)
+	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID,
+		setID)
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err
@@ -146,7 +148,6 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 
 	// check result
 	if !gs.Get("result").Bool() {
-		//fmt.Println("the result:", string(rst))
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 

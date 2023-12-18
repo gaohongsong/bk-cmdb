@@ -1,14 +1,26 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package metric
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/types"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 )
 
 var metricController *MetricController
@@ -49,7 +61,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 			Module:     conf.ModuleName,
 			Address:    conf.ServerAddress,
 			HealthMeta: h,
-			AtTime:     types.Now(),
+			AtTime:     metadata.Now(),
 		}
 
 		rsp := HealthResponse{
@@ -59,6 +71,7 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 			Result:  h.IsHealthy,
 			Message: h.Message,
 		}
+		rsp.SetCommonResponse()
 		js, err := json.Marshal(rsp)
 		if nil != err {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -77,11 +90,13 @@ func newMetricController(conf Config, healthFunc HealthFunc, collectors ...*Coll
 	return actions
 }
 
+// MetricController TODO
 type MetricController struct {
 	MetaData   *MetaData
 	Collectors map[CollectorName]CollectInter
 }
 
+// PackMetrics TODO
 func (mc *MetricController) PackMetrics() (*[]byte, error) {
 	mf := MetricFamily{
 		MetaData:     mc.MetaData,

@@ -12,8 +12,14 @@
 
 package common
 
+// ResourcePath TODO
 var ResourcePath string = "/tmp"
 
+// API_VERSION TODO
 const API_VERSION = "v3"
 
+// IsSkipLogin TODO
 const IsSkipLogin = "skiplogin"
+
+// InaccessibleHtml inaccessible html
+const InaccessibleHtml string = "403.html"

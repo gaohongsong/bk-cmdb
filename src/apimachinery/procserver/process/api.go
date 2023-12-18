@@ -13,29 +13,50 @@
 package process
 
 import (
-    "context"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 )
 
+// ProcessClientInterface TODO
 type ProcessClientInterface interface {
-    GetProcessDetailByID(ctx context.Context, appID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    GetProcessBindModule(ctx context.Context, businessID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    BindModuleProcess(ctx context.Context, businessID string, procID string, moduleName string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    DeleteModuleProcessBind(ctx context.Context, businessID string, procID string, moduleName string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    CreateProcess(ctx context.Context, businessID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    DeleteProcess(ctx context.Context, businessID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    SearchProcess(ctx context.Context, businessID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    UpdateProcess(ctx context.Context, businessID string, procID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
+	CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
+		err error)
+	DeleteProcessInstance(ctx context.Context, h http.Header,
+		data *metadata.DeleteProcessInstanceInServiceInstanceInput) error
+	SearchProcessInstance(ctx context.Context, h http.Header, data *metadata.ListProcessInstancesOption) (
+		[]metadata.ProcessInstance, error)
+	UpdateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
+		err error)
 
+	CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
+		err error)
+	DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
+		err error)
+	SearchProcessTemplate(ctx context.Context, h http.Header, i *metadata.ListProcessTemplateWithServiceTemplateInput) (
+		*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
+		err error)
+	ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64,
+		data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error)
+	ListProcessInstancesNameIDsInModule(ctx context.Context, h http.Header,
+		data map[string]interface{}) (resp *metadata.Response, err error)
+	ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header,
+		data map[string]interface{}) (resp *metadata.Response, err error)
+	ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64,
+		data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error)
+	UpdateProcessInstancesByIDs(ctx context.Context, h http.Header,
+		data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
+// NewProcessClientInterface TODO
 func NewProcessClientInterface(client rest.ClientInterface) ProcessClientInterface {
-    return &process{client:client}
+	return &process{client: client}
 }
 
 type process struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

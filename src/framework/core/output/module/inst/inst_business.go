@@ -40,22 +40,28 @@ type business struct {
 	datas  types.MapStr
 }
 
+// GetModel TODO
 func (cli *business) GetModel() model.Model {
 	return cli.target
 }
 
+// GetInstID TODO
 func (cli *business) GetInstID() (int, error) {
 	return cli.datas.Int(BusinessID)
 }
+
+// GetInstName TODO
 func (cli *business) GetInstName() string {
 
 	return cli.datas.String(BusinessNameField)
 }
 
+// GetValues TODO
 func (cli *business) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
+// SetValue TODO
 func (cli *business) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
@@ -84,9 +90,11 @@ func (cli *business) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// search by condition
-	items, err := client.GetClient().CCV3().Business().SearchBusiness(cond)
+	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Business().SearchBusiness(cond)
 	return attrs, items, err
 }
+
+// IsExists TODO
 func (cli *business) IsExists() (bool, error) {
 
 	// search by condition
@@ -98,9 +106,10 @@ func (cli *business) IsExists() (bool, error) {
 	return 0 != len(existItems), nil
 }
 
+// Create TODO
 func (cli *business) Create() error {
 
-	bizID, err := client.GetClient().CCV3().Business().CreateBusiness(cli.datas)
+	bizID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Business().CreateBusiness(cli.datas)
 	if err == nil {
 		cli.datas.Set(BusinessID, bizID)
 		return nil
@@ -109,6 +118,8 @@ func (cli *business) Create() error {
 	return err
 
 }
+
+// Update TODO
 func (cli *business) Update() error {
 
 	attrs, existItems, err := cli.search()
@@ -126,8 +137,9 @@ func (cli *business) Update() error {
 		cli.datas.Remove(key)
 	})
 
-	cli.datas.Remove("create_time") //invalid check , need to delete
+	cli.datas.Remove("create_time") // invalid check , need to delete
 
+	supplierAccount := cli.target.GetSupplierAccount()
 	// update the exists
 	for _, existItem := range existItems {
 
@@ -138,8 +150,9 @@ func (cli *business) Update() error {
 
 		cli.datas.Remove(BusinessID)
 
-		//fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3().Business().UpdateBusiness(cli.datas, bizID)
+		// fmt.Println("the new:", existItem)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Business().UpdateBusiness(cli.datas,
+			bizID)
 		if nil != err {
 			return err
 		}
@@ -151,6 +164,7 @@ func (cli *business) Update() error {
 	return nil
 }
 
+// Save TODO
 func (cli *business) Save() error {
 	if exists, err := cli.IsExists(); nil != err {
 		return err

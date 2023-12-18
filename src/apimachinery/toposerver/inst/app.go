@@ -14,102 +14,129 @@ package inst
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 )
 
-func (t *instanceClient) CreateApp(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s", h.OwnerID)
+// CreateApp TODO
+func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header,
+	params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
+	subPath := "/app/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(params).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) DeleteApp(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s/%s", h.OwnerID, appID)
+// DeleteApp TODO
+func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string,
+	h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/app/%s/%s"
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID, appID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) UpdateApp(ctx context.Context, appID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s/%s", h.OwnerID, appID)
+// UpdateApp TODO
+func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/app/%s/%s"
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID, appID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, flag common.DataStatusFlag, appID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/%s/%s/%s", flag, h.OwnerID, appID)
+// UpdateAppDataStatus TODO
+func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag,
+	appID string, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/app/%s/%s/%s"
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, flag, ownerID, appID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SearchApp(ctx context.Context, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/search/%s", h.OwnerID)
+// SearchApp TODO
+func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/app/search/%s"
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) GetDefaultApp(ctx context.Context, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/default/%s/search", h.OwnerID)
+// GetAppBasicInfo TODO
+func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header,
+	bizID int64) (resp *metadata.AppBasicInfoResult, err error) {
+	resp = new(metadata.AppBasicInfoResult)
+	subPath := "/app/%d/basic_info"
+	err = t.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// GetDefaultApp TODO
+func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string,
+	h http.Header) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := "/app/default/%s/search"
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(s).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(nil).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) CreateDefaultApp(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/app/default/%s", h.OwnerID)
+// CreateDefaultApp TODO
+func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
+	subPath := "/app/default/%s"
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(data).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

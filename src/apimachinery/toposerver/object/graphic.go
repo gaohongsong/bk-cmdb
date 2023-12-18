@@ -14,35 +14,38 @@ package object
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
 )
 
-func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/objects/topographics/scope_type/%s/scope_id/%s/action/search", scopeType, scopeID)
+// SelectObjectTopoGraphics TODO
+func (t *object) SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string,
+	h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/find/objecttopo/scope_type/%s/scope_id/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		SubResourcef(subPath, scopeType, scopeID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/objects/topographics/scope_type/%s/scope_id/%s/action/update", scopeType, scopeID)
+// UpdateObjectTopoGraphics TODO
+func (t *object) UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/update/objecttopo/scope_type/%s/scope_id/%s"
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		Body(data).
+		SubResourcef(subPath, scopeType, scopeID).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

@@ -10,39 +10,47 @@
  * limitations under the License.
  */
 
+// Package procserver TODO
 package procserver
 
 import (
-    "fmt"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/procserver/process"
-    "configcenter/src/apimachinery/procserver/openapi"
+	"fmt"
+
+	"configcenter/src/apimachinery/procserver/openapi"
+	"configcenter/src/apimachinery/procserver/process"
+	"configcenter/src/apimachinery/procserver/service"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
 )
 
+// ProcServerClientInterface TODO
 type ProcServerClientInterface interface {
-    Process() process.ProcessClientInterface
-    OpenAPI() openapi.OpenAPIClientInterface
-
+	Process() process.ProcessClientInterface
+	OpenAPI() openapi.OpenAPIClientInterface
+	Service() service.ServiceClientInterface
 }
 
+// NewProcServerClientInterface TODO
 func NewProcServerClientInterface(c *util.Capability, version string) ProcServerClientInterface {
-    base := fmt.Sprintf("/proc/%s", version)
-    return &procServer{client: rest.NewRESTClient(c, base)}
+	base := fmt.Sprintf("/process/%s", version)
+	return &procServer{client: rest.NewRESTClient(c, base)}
 }
 
 type procServer struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }
 
+// Process TODO
 func (p *procServer) Process() process.ProcessClientInterface {
-    return process.NewProcessClientInterface(p.client)
+	return process.NewProcessClientInterface(p.client)
 }
 
+// OpenAPI TODO
 func (p *procServer) OpenAPI() openapi.OpenAPIClientInterface {
-    return openapi.NewOpenApiClientInterface(p.client)
+	return openapi.NewOpenApiClientInterface(p.client)
 }
 
-
-
+// Service TODO
+func (p *procServer) Service() service.ServiceClientInterface {
+	return service.NewServiceClientInterface(p.client)
+}

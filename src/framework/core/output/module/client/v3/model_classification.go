@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3
 
 import (
@@ -21,9 +21,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ClassificationGetter TODO
 type ClassificationGetter interface {
 	Classification() ClassificationInterface
 }
+
+// ClassificationInterface TODO
 type ClassificationInterface interface {
 	CreateClassification(data types.MapStr) (int, error)
 	DeleteClassification(cond common.Condition) error
@@ -32,6 +35,7 @@ type ClassificationInterface interface {
 	UpdateClassification(data types.MapStr, cond common.Condition) error
 }
 
+// Classification TODO
 type Classification struct {
 	cli *Client
 }
@@ -45,7 +49,7 @@ func newClassification(cli *Client) *Classification {
 // CreateClassification create a new classification
 func (m *Classification) CreateClassification(data types.MapStr) (int, error) {
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/create/objectclassification", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -74,7 +78,7 @@ func (m *Classification) DeleteClassification(cond common.Condition) error {
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/delete/objectclassification/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.DELETE(targetURL, nil, nil)
 	if nil != err {
@@ -96,7 +100,7 @@ func (m *Classification) SearchClassifications(cond common.Condition) ([]types.M
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classifications", m.cli.GetAddress())
+	targetURL := fmt.Sprintf("%s/api/v3/find/objectclassification", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -126,7 +130,7 @@ func (m *Classification) SearchClassificationWithObjects(cond common.Condition) 
 
 	data := cond.ToMapStr()
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%s/objects", m.cli.GetAddress(), m.cli.GetSupplierAccount())
+	targetURL := fmt.Sprintf("%s/api/v3/find/classificationobject", m.cli.GetAddress())
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -159,7 +163,7 @@ func (m *Classification) UpdateClassification(data types.MapStr, cond common.Con
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v3/object/classification/%d", m.cli.GetAddress(), id)
+	targetURL := fmt.Sprintf("%s/api/v3/update/objectclassification/%d", m.cli.GetAddress(), id)
 
 	rst, err := m.cli.httpCli.PUT(targetURL, nil, data.ToJSON())
 	if nil != err {

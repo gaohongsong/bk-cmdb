@@ -1,15 +1,16 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
+// Package ssl TODO
 package ssl
 
 import (
@@ -20,12 +21,15 @@ import (
 	"io/ioutil"
 )
 
-func ClientTslConfNoVerity() *tls.Config {
+// ClientTLSConfNoVerify TODO
+// client tls config without verify
+func ClientTLSConfNoVerify() *tls.Config {
 	return &tls.Config{
 		InsecureSkipVerify: true,
 	}
 }
 
+// ClientTslConfVerityServer TODO
 func ClientTslConfVerityServer(caFile string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
@@ -39,7 +43,8 @@ func ClientTslConfVerityServer(caFile string) (*tls.Config, error) {
 	return conf, nil
 }
 
-func ClientTslConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
+// ClientTLSConfVerity TODO
+func ClientTLSConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
 		return nil, err
@@ -51,7 +56,7 @@ func ClientTslConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config,
 	}
 
 	conf := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 		RootCAs:            caPool,
 		Certificates:       []tls.Certificate{*cert},
 	}
@@ -59,29 +64,8 @@ func ClientTslConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config,
 	return conf, nil
 }
 
-func ServerTslConf(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
-	if "" == caFile {
-		return ServerTslConfVerity(certFile, keyFile, passwd)
-	}
-
-	return ServerTslConfVerityClient(caFile, certFile, keyFile, passwd)
-}
-
-func ServerTslConfVerity(certFile, keyFile, passwd string) (*tls.Config, error) {
-
-	cert, err := loadCertificates(certFile, keyFile, passwd)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := &tls.Config{
-		Certificates: []tls.Certificate{*cert},
-	}
-
-	return conf, nil
-}
-
-func ServerTslConfVerityClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
+// ServerTLSVerifyClient server tls verify client
+func ServerTLSVerifyClient(caFile, certFile, keyFile, passwd string) (*tls.Config, error) {
 	caPool, err := loadCa(caFile)
 	if err != nil {
 		return nil, err
@@ -116,7 +100,7 @@ func loadCa(caFile string) (*x509.CertPool, error) {
 }
 
 func loadCertificates(certFile, keyFile, passwd string) (*tls.Certificate, error) {
-	//key file
+	// key file
 	priKey, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
@@ -139,7 +123,7 @@ func loadCertificates(certFile, keyFile, passwd string) (*tls.Certificate, error
 		})
 	}
 
-	//certificate
+	// certificate
 	certData, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
